@@ -54,7 +54,7 @@ function check-prerequisites {
 }
 
 function kind-cluster-up {
-    kind create cluster --config "${CURRENT_DIR}/hack/kind-config.yaml" --wait --name kind
+    kind create cluster --config "${CURRENT_DIR}/hack/kind-config.yaml" --name "kind"  --wait "200s"
 }
 
 
@@ -63,20 +63,20 @@ function install-istio {
     echo "installing istio crds"
     kubectl apply -f "${KNATIVE_SERVING_DIR}/third_party/istio-1.2-latest/istio-crds.yaml"
     while [[ $(kubectl get crd gateways.networking.istio.io -o jsonpath='{.status.conditions[?(@.type=="Established")].status}') != 'True' ]]; do
-        echo "Waiting on Istio CRDs"; sleep 1
+        echo "Waiting on Istio CRDs"; sleep 2
     done
     echo "installing istio services (NodePort)"
-    cat "${KNATIVE_SERVING_DIR}/third_party/istio-1.2-latest/istio.yaml" | sed 's/LoadBalancer/NodePort/' | kb apply -f -
+    cat "${KNATIVE_SERVING_DIR}/third_party/istio-1.2-latest/istio.yaml" | sed 's/LoadBalancer/NodePort/' | kubectl apply -f -
 }
 
 function install-cert-manager {
     echo "installing cert manager crds"
     kubectl apply -f "${KNATIVE_SERVING_DIR}/third_party/cert-manager-0.6.1/cert-manager-crds.yaml"
     while [[ $(kubectl get crd certificates.certmanager.k8s.io -o jsonpath='{.status.conditions[?(@.type=="Established")].status}') != 'True' ]]; do
-        echo "Waiting on Cert-Manager CRDs"; sleep 1
+        echo "Waiting on Cert-Manager CRDs"; sleep 2
     done
     echo "installing cert manager services"
-    kubectl apply -f "${KNATIVE_SERVING_DIR}/third_party/cert-manager-0.6.1/cert-manager.yaml --validate=false"
+    kubectl apply -f "${KNATIVE_SERVING_DIR}/third_party/cert-manager-0.6.1/cert-manager.yaml" "--validate=false"
 }
 
 function install-knative-serving {
@@ -84,15 +84,21 @@ function install-knative-serving {
     ko apply -f "${KNATIVE_SERVING_DIR}/config/" -f "${KNATIVE_SERVING_DIR}/config/v1beta1"
     echo "installing sample knative service"
     kubectl apply -f "${CURRENT_DIR}/hack/knative-serving.yaml"
-    sleep 5
+    echo "waiting 60s until hello world is running."
+    sleep 60
     echo "Get NodePort for 80 port"
     NODEPORT=`kubectl get svc istio-ingressgateway --namespace istio-system -o 'jsonpath={.spec.ports[?(@.port==80)].nodePort}'`
     echo "Get NodeIP for hello world service"
     NODEIP=`kubectl get node  --output 'jsonpath={.items[0].status.addresses[0].address}'`
     echo "Get host name for hello world service"
     SAMPLE_HOST=`kubectl get route helloworld-go --output 'jsonpath={.status.url}' | sed 's/http:\/\//''/'`
-    echo "Usage: Please try command: \n curl -H \"Host: ${SAMPLE_HOST}\" http://${NODEIP}:${NODEPORT}"
-
+    echo "Usage: Please follow these commands below: \n
+     [Refresh K8s config]: export KUBECONFIG=\"$(kind get kubeconfig-path --name=\"kind\")\" \n
+     [Try hello world service]: curl -H \"Host: ${SAMPLE_HOST}\" http://${NODEIP}:${NODEPORT} \n
+     [DockerRepo]: ${KO_DOCKER_REPO} \n
+     [RePublish your Knative servings]: ko apply -f \"${KNATIVE_SERVING_DIR}/config/\" -f \"${KNATIVE_SERVING_DIR}/config/v1beta1\" \n
+     [Delete kind clusters]: kind delete cluster  --name kind \n
+     "
 
 }
 
