@@ -92,13 +92,13 @@ function install-knative-serving {
     NODEIP=`kubectl get node  --output 'jsonpath={.items[0].status.addresses[0].address}'`
     echo "Get host name for hello world service"
     SAMPLE_HOST=`kubectl get route helloworld-go --output 'jsonpath={.status.url}' | sed 's/http:\/\//''/'`
-    echo "Usage: Please follow these commands below: \n
-     [Refresh K8s config]: export KUBECONFIG=\"$(kind get kubeconfig-path --name=\"kind\")\" \n
-     [Try hello world service]: curl -H \"Host: ${SAMPLE_HOST}\" http://${NODEIP}:${NODEPORT} \n
-     [DockerRepo]: ${KO_DOCKER_REPO} \n
-     [RePublish your Knative servings]: ko apply -f \"${KNATIVE_SERVING_DIR}/config/\" -f \"${KNATIVE_SERVING_DIR}/config/v1beta1\" \n
-     [Delete kind clusters]: kind delete cluster  --name kind \n
-     "
+    echo "====================Knative development env has been successfully initialized===================="
+    echo "Usage: Please follow these commands below:
+[Refresh K8s config]: export KUBECONFIG=\"$(kind get kubeconfig-path --name=\"kind\")\"
+[Try hello world service]: curl -H \"Host: ${SAMPLE_HOST}\" http://${NODEIP}:${NODEPORT}
+[DockerRepo]: ${KO_DOCKER_REPO}
+[RePublish Knative serving components]: ko apply -f \"${KNATIVE_SERVING_DIR}/config/\" -f \"${KNATIVE_SERVING_DIR}/config/v1beta1\"
+[Delete kind clusters]: kind delete cluster  --name kind"
 
 }
 
