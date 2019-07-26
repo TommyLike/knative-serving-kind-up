@@ -98,7 +98,11 @@ function install-knative-serving {
 [Try hello world service]: curl -H \"Host: ${SAMPLE_HOST}\" http://${NODEIP}:${NODEPORT}
 [DockerRepo]: ${KO_DOCKER_REPO}
 [RePublish Knative serving components]: ko apply -f \"${KNATIVE_SERVING_DIR}/config/\" -f \"${KNATIVE_SERVING_DIR}/config/v1beta1\"
-[Delete kind clusters]: kind delete cluster  --name kind"
+[Delete kind clusters]: kind delete cluster  --name kind
+[Show activator  log]: kubectl logs deployment/activator -n knative-serving -c activator
+[Show autoscaler log]: kubectl logs deployment/autoscaler -n knative-serving -c autoscaler
+[Show controller log]: kubectl logs deployment/controller -n knative-serving -c controller
+"
 
 }
 
