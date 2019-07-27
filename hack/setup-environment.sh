@@ -83,18 +83,21 @@ function install-knative-serving {
     echo "build and install knative serving...."
     ko apply -f "${KNATIVE_SERVING_DIR}/config/" -f "${KNATIVE_SERVING_DIR}/config/v1beta1"
     echo "installing sample knative service"
-    kubectl apply -f "${CURRENT_DIR}/hack/knative-serving.yaml"
-    echo "waiting 60s until hello world is running."
-    sleep 60
+    kubectl apply -f "${CURRENT_DIR}/hack/knative-serving-hello-world.yaml"
+    echo "creating knative serving testting related resources"
+    kubectl apply -f "${KNATIVE_SERVING_DIR}/test/conf"
+    echo "waiting 50s until hello world is running."
+    sleep 50
     echo "Get NodePort for 80 port"
     NODEPORT=`kubectl get svc istio-ingressgateway --namespace istio-system -o 'jsonpath={.spec.ports[?(@.port==80)].nodePort}'`
+
     echo "Get NodeIP for hello world service"
     NODEIP=`kubectl get node  --output 'jsonpath={.items[0].status.addresses[0].address}'`
     echo "Get host name for hello world service"
     SAMPLE_HOST=`kubectl get route helloworld-go --output 'jsonpath={.status.url}' | sed 's/http:\/\//''/'`
     echo "====================Knative development env has been successfully initialized===================="
     echo "Usage: Please follow these commands below:
-[Refresh K8s config]: export KUBECONFIG=\"$(kind get kubeconfig-path --name=\"kind\")\"
+[Refresh K8s config]: export KUBECONFIG=\"$(kind get kubeconfig-path --name=kind)\"
 [Try hello world service]: curl -H \"Host: ${SAMPLE_HOST}\" http://${NODEIP}:${NODEPORT}
 [DockerRepo]: ${KO_DOCKER_REPO}
 [RePublish Knative serving components]: ko apply -f \"${KNATIVE_SERVING_DIR}/config/\" -f \"${KNATIVE_SERVING_DIR}/config/v1beta1\"
@@ -102,6 +105,8 @@ function install-knative-serving {
 [Show activator  log]: kubectl logs deployment/activator -n knative-serving -c activator
 [Show autoscaler log]: kubectl logs deployment/autoscaler -n knative-serving -c autoscaler
 [Show controller log]: kubectl logs deployment/controller -n knative-serving -c controller
+[Uploading test images]: bash ${KNATIVE_SERVING_DIR}/test/upload-test-images.sh
+[Running e2e tests]: go test -v -tags=e2e -count=1 ./test/e2e --ingressendpoint \"${NODEIP}:${NODEPORT}\" --kubeconfig \"$(kind get kubeconfig-path --name=kind)\"
 "
 
 }
